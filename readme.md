@@ -17,6 +17,45 @@ To install and run the Churn Analyzer App, follow these steps: (Virtual environm
    wave run src.app
    ```
 
+## Usage
+
+The Churn Analyzer App is a web-based application that can be accessed through a web browser. The app provides an interactive interface to upload and analyze customer data.
+
+1. **Upload Data**:
+   - Upload a CSV file containing customer data.
+   - The app will automatically detect the columns in the dataset and display them for selection.
+   - Alternatively, you can use the sample datasets provided in the app.
+2. **Analyze Data**:
+   - The app will analyze the data and provide insights including:
+     - Data Summary
+     - Correlation Analysis
+     - Missing Values Analysis
+     - Categorical Features Analysis
+     - Numerical Features Analysis
+     - Histograms with respect to the target variable (Churn)
+
+## Screenshots
+
+### Home Page
+![Home Page](static/home.png)
+
+### Analysis Page
+
+#### Data Summary
+![Data Summary](static/summary.png)
+
+#### Correlation and Missing Values Analysis
+![Correlation Analysis](static/corr_missing.png)
+
+#### Categorical Features Analysis
+![Categorical Features Analysis](static/categorical.png)
+
+#### Numerical Features Analysis
+![Numerical Features Analysis](static/numerical.png)
+
+#### Histograms
+![Histograms](static/histogram.png)
+
 ## Icon Attribution
 
 All the icons used in the Churn Analyzer App are from [ICONS8](https://icons8.com/).
