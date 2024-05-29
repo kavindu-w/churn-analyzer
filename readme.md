@@ -17,6 +17,9 @@ To install and run the Churn Analyzer App, follow these steps:
    wave run src.app
    ```
 
+## Icon Attribution
+
+All the icons used in the Churn Analyzer App are from [ICONS8](https://icons8.com/).
 ## Contributing
 
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.

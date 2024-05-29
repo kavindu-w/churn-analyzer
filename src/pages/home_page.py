@@ -1,15 +1,18 @@
 from h2o_wave import ui, site
-from src.common import utils
+# from src.common import utils
 
 async def home_page_impl(q:dict, details: dict) -> dict:
-    header = []
-    
-    items = []
+    about = [
+
+    ]
+    items = [
+
+    ]
     
     cfg = {
         "tag": "home",
         "items": items,
-        "header": header
+        "about": about
     }
     
     return cfg

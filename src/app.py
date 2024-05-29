@@ -34,7 +34,7 @@ async def serve(q: Q):
     except Exception as e:
         logger.exception(e)
         q.page["meta"].notification_bar = ui.notification_bar(
-            title="Error occured",
+            text="Error occured",
             type="error",
             name="error_bar"
         )
@@ -52,7 +52,17 @@ def create_layout(q: Q, tag=None):
         ),
         title=config["app_title"],
         subtitle=config["sub_title"],
-        # image="",
+        image="https://img.icons8.com/?size=100&id=92028&format=png&color=000000",
+        secondary_items=[
+            ui.tabs(
+                name="tabs",
+                items=[
+                    ui.tab(name="home", label="Home", icon="Home"),
+                    ui.tab(name="analyze", label="Analyze", icon="Financial"),
+                ],
+                value=q.client.tab or "home",
+            )        
+        ]
     )
 
     q.page["footer"] = ui.footer_card(box="footer", caption=config["footer_text"])
@@ -63,10 +73,10 @@ def create_layout(q: Q, tag=None):
                 name="content_0",
                 direction="row",
                 zones=[
-                    ui.zone(name="content_01", size='10%', direction="row"), 
+                    ui.zone(name="content_01", size='30%', direction="row"), 
                     ui.zone(
                         name="content_02",
-                        size='90%',
+                        size='70%',
                     ),
                 ],
             ),
@@ -77,7 +87,7 @@ def create_layout(q: Q, tag=None):
     
     q.page["meta"] = ui.meta_card(
         box="",
-        # theme = "light",
+        theme = "lighting",
         title= config["app_title"] + " | Kavindu Warnakulasuriya",
         layouts=[
             ui.layout(
@@ -97,20 +107,17 @@ async def render_template(q: Q, page_cfg):
     
     
     if page_cfg["tag"] == "home":
-        q.page["content_left"] = ui.nav_card(
-            box=ui.box(zone="content_01", height='840px', width="100%", order=1),
+        q.page["content_01"] = ui.form_card(
+            box=ui.box(zone="content_01", width="100%", height="680px"),
             title="",
-            value=page_cfg["flag"],
             items=page_cfg["items"],
         )
-        if page_cfg["flag"] in ["about"]:
-            q.page["content_02"] = ui.form_card(
-                box=ui.box(zone="content_02",  width="100%", order=1),
-                title="",
-                items=page_cfg["items"],
-            )
-        else:
-            pass
+        q.page["content_02"] = ui.form_card(
+            box=ui.box(zone="content_02",  width="100%", height="100%"),
+            title="",
+            items=page_cfg["about"],
+        )
+
 
 
     else:
