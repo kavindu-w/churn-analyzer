@@ -3,6 +3,9 @@ from loguru import logger
 from datetime import datetime
 
 from src.pages.home_page import home_page_impl
+from src.pages.analyze_page import analyze_page_impl
+
+
 logger.add(
     "./logs/debug.log",
     level='DEBUG',
@@ -20,6 +23,7 @@ logger.add(
 @app('/')
 async def serve(q: Q):
     try:
+        logger.debug(f"Request: {q.args}")
         if not q.client.initialized:
             if q.user.config is None:
                 q.user.config = {
@@ -30,12 +34,20 @@ async def serve(q: Q):
             q.client.initialized = True
 
         #handlers
-        await home_page(q, {"flag": "about"})
+        if q.args.tab == "home":
+            await home_page(q, {"flag": "home"})
+        elif q.args.tab == "analyze":
+            await analyze_page(q, {"flag": "analyze"})
+        elif q.args.button_analyze_data:
+            await analyze_page(q, {"path": "data/Bank Customer Churn Prediction.csv"})
+        else:
+            # await analyze_page(q, {"flag": "analyze"})
+            await home_page(q, {"flag": "home"})
 
     except Exception as e:
         logger.exception(e)
         q.page["meta"].notification_bar = ui.notification_bar(
-            text="Error occured",
+            text="Error occured, please try again later",
             type="error",
             name="error_bar"
         )
@@ -56,7 +68,7 @@ def create_layout(q: Q, tag=None):
         image="https://img.icons8.com/?size=100&id=92028&format=png&color=000000",
         secondary_items=[
             ui.tabs(
-                name="tabs",
+                name="tab",
                 items=[
                     ui.tab(name="home", label="Home", icon="Home"),
                     ui.tab(name="analyze", label="Analyze", icon="Financial"),
@@ -68,7 +80,7 @@ def create_layout(q: Q, tag=None):
 
     q.page["footer"] = ui.footer_card(box="footer", caption=config["footer_text"])
     zones = [ui.zone(name="content_0", size="840px", direction="row")]
-    if tag in ["home"]:
+    if tag == "home":
         zones = [
             ui.zone(
                 name="content_0",
@@ -82,7 +94,29 @@ def create_layout(q: Q, tag=None):
                 ],
             ),
         ]
-
+    elif tag == "analyze":
+        zones = [
+            ui.zone(
+                name="content_0",
+                direction="column",
+                zones=[
+                    ui.zone(name="content_01", direction="row"), 
+                    ui.zone(
+                        name="content_02",
+                        direction="row",
+                        zones=[
+                            ui.zone(name="content_021", size='50%', direction="row"),
+                            ui.zone(name="content_022", size='50%', direction="row"),
+                        ],
+                    ),
+                    ui.zone(name="content_03", direction="row"), 
+                    ui.zone(name="content_04", direction="row"), 
+                    ui.zone(name="content_05", direction="row")
+                    
+                    
+                ],
+            ),
+        ]
     else:
         pass
     
@@ -118,8 +152,46 @@ async def render_template(q: Q, page_cfg):
             title="",
             items=page_cfg["about"],
         )
-
-
+    elif page_cfg["tag"] == "analyze":
+        q.page['content_011'] = ui.tall_stats_card(
+            box=ui.box(zone="content_01", width="20%", order=1),
+            items=page_cfg["stats_left"]
+        )
+        q.page["content_012"] = ui.form_card(
+            box=ui.box(zone="content_01", width="100%", order=2),
+            title="",
+            items=page_cfg["stats_tables"],
+        )
+        q.page["content_021"] = ui.image_card(
+            box=ui.box(zone="content_021",  width="100%",),
+            title="",
+            type="png",
+            image=page_cfg["correlation_matrix"],
+        )
+        q.page["content_022"] = ui.image_card(
+            box=ui.box(zone="content_022",  width="100%"),
+            title="",
+            type="png",
+            image=page_cfg["missing_values"],
+        )
+        q.page["content_03"] = ui.image_card(
+            box=ui.box(zone="content_03",  width="100%"),
+            title="",
+            type="png",
+            image=page_cfg["categorical_plots"],
+        )
+        q.page["content_04"] = ui.image_card(
+            box=ui.box(zone="content_04",  width="100%"),
+            title="",
+            type="png",
+            image=page_cfg["numerical_plots"],
+        )
+        q.page["content_05"] = ui.image_card(
+            box=ui.box(zone="content_05",  width="100%"),
+            title="",
+            type="png",
+            image=page_cfg["histograms"],
+        )
 
     else:
         pass
@@ -129,4 +201,9 @@ async def render_template(q: Q, page_cfg):
 # page handlers
 async def home_page(q: Q, details: dict):
     cfg = await home_page_impl(q, details)
+    await render_template(q, cfg)
+
+
+async def analyze_page(q: Q, details: dict):
+    cfg = await analyze_page_impl(q, details)
     await render_template(q, cfg)
