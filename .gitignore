@@ -1,6 +1,6 @@
 logs/
 venv
-data/
+data/uploads/
 
 # ignore __pycache__ directories
 **/__pycache__/

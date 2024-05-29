@@ -1,4 +1,6 @@
 from h2o_wave import ui, site, TableColumn
+import re
+
 from src.utils import (
     load_data,
     describe_data,
@@ -7,17 +9,16 @@ from src.utils import (
     plot_categorical,
     plot_boxplot,
     display_histograms
-
 )
-import pandas as pd
+from loguru import logger
 
 async def analyze_page_impl(q:dict, details: dict) -> dict:
     q.client.tab = "analyze"
-    if details["path"]:
-        df = load_data(details["path"])
+    if "path" in details: 
+        df = load_data(q, details["path"])
     else:
         # Load the default dataset
-        df = load_data("data/Bank Customer Churn Prediction.csv")
+        df = load_data(q, "data/Bank Customer Churn Prediction.csv")
         q.page["meta"].notification_bar = ui.notification_bar(
             text="Loaded the default dataset: Bank Customer Churn Prediction.csv",
             type="error",
@@ -29,20 +30,11 @@ async def analyze_page_impl(q:dict, details: dict) -> dict:
     
     stats_tables = [
         ui.markup(content= f"<center><h2>Dataset Summary</h2></center>"),
-        # ui.inline(align='center', justify='around', height='100px',
-        #     items=[
-        #         ui.markup(content= f"""
-        #         <b>Numerical Attributes:</b> <br> {', '.join(df.select_dtypes(include=['int64', 'float64']).columns)}
-        #         """),
-        #         ui.markup(content= f"""
-        #         <b>Categorical Attributes:</b> <br> {', '.join(df.select_dtypes(include=['object']).columns)}
-        #         """),
-        #         ]),
         ui.separator(label="Descriptive Statistics"),
         # add the describe data
-        ui.markup(content= describe_data(df).to_html().replace('<table', '<table style="border: 2px solid black;"').replace('<th>', '<th style="background-color: royalblue; color: white; border: 0px solid black; text-align: center;">').replace('<td>', '<td style="border: 1px solid black;">')),
+        ui.markup(content= "<center>" + describe_data(df).to_html().replace('<table', '<table style="border: 2px solid black;"').replace('<th>', '<th style="background-color: royalblue; color: white; border: 0px solid black; text-align: center; padding: 5px;">').replace('<td>', '<td style="border: 1px solid black;">') + "</center>"),
         ui.separator(label="First 5 Rows of the Dataset"),
-        ui.markup(content= df.head().to_html().replace('<table', '<table style="border: 2px solid black;"').replace('<th>', '<th style="background-color: royalblue; color: white; border: 0px solid black; text-align: center;">').replace('<td>', '<td style="border: 1px solid black;">')),
+        ui.markup(content=  "<center>" + df.head().to_html().replace('<table', '<table style="border: 2px solid black;"').replace('<th>', '<th style="background-color: royalblue; color: white; border: 0px solid black; text-align: center; padding: 5px;">').replace('<td>', '<td style="border: 1px solid black;">') + "</center>"),
     ]
     stats_left = [
                 ui.stat(label='Records', value=str(df.shape[0])),
@@ -51,28 +43,28 @@ async def analyze_page_impl(q:dict, details: dict) -> dict:
                 ui.stat(label='Categorical', value=str(len(df.select_dtypes(include=['object']).columns))),
                 ui.stat(label='Numerical', value=str(len(df.select_dtypes(include=['int64', 'float64']).columns))),
     ]
-    about = [
-        ui.markup(content=
-        """
-        <center><h2> Customer Retention Analyzer Application </h2></center>
-        """
-        )
-    ]
-    items = [    
-    ]
     
+    # check the columns of the df and find the column name containing the target variable
+    churn_columns = df.filter(regex='(?i)churn', axis=1).columns
+    # logger.debug(f"Churn Columns: {churn_columns}")
+    churn_column = churn_columns[0] if len(churn_columns) != 0 else None
+    
+    if churn_column is None:
+        q.page["meta"].notification_bar = ui.notification_bar(
+            text="No target variable found in the dataset",
+            type="error",
+            name="error_bar"
+        )
     
     cfg = {
         "tag": "analyze",
-        "items": items,
-        "about": about,
         "stats_tables": stats_tables,
         "stats_left": stats_left,
         "correlation_matrix": plot_correlation_matrix(df),
         "missing_values": plot_missing_values(df),
         "categorical_plots": plot_categorical(df),
         "numerical_plots": plot_boxplot(df),
-        "histograms": display_histograms(df, "churn")
+        "histograms": display_histograms(df, churn_column)
     }
     
     return cfg
