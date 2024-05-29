@@ -1,5 +1,6 @@
 from h2o_wave import Q, app, main, run_on, ui
 from loguru import logger
+from datetime import datetime
 
 from src.pages.home_page import home_page_impl
 logger.add(
@@ -24,7 +25,7 @@ async def serve(q: Q):
                 q.user.config = {
                     "app_title": "Churn Analyzer",
                     "sub_title": "Analyze your churn data with ease!",
-                    "footer_text": 'This application is built using H2O Wave',
+                    "footer_text": f'This application is built using H2O Wave | Copyright © {datetime.now().year} Kavindu Warnakulasuriya',
                 }
             q.client.initialized = True
 
