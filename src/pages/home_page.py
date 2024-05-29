@@ -1,5 +1,4 @@
 from h2o_wave import ui, site
-# from src.common import utils
 
 async def home_page_impl(q:dict, details: dict) -> dict:
     q.client.tab = "home"
@@ -26,18 +25,17 @@ async def home_page_impl(q:dict, details: dict) -> dict:
                 Innovate visualizations according to the latest research to help you understand the data and derive meaningful insights at a glance.
             </li>
         </ul>
-"""
+        """
         )
     ]
     items = [
         ui.dropdown(
             name="dataset",
             label="Select a Sample Dataset",
-            value="churn",
+            value="bank",
             choices=[
-                ui.choice(name="churn", label="Churn Dataset"),
-                ui.choice(name="telco", label="Telco Dataset"),
-                ui.choice(name="bank", label="Bank Dataset"),
+                ui.choice(name="bank", label="Bank Churn Dataset"),
+                ui.choice(name="telco", label="Telco Churn Dataset"),
             ],
         ),
         ui.button(name="button_analyze_data", label="Analyze Data", primary=True),
