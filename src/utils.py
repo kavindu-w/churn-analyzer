@@ -4,8 +4,11 @@ import matplotlib.pyplot as plt
 import io
 import base64
 import math
+from loguru import logger
+from h2o_wave import Q, app, main, run_on, ui
+from sklearn.preprocessing import OrdinalEncoder
 
-def load_data(path):
+def load_data(q, path):
     try:
         data = pd.read_csv(path)
         return data
@@ -19,28 +22,28 @@ def load_data(path):
 
 def describe_data(data):
     # Return the summary statistics of the dataset
-    return data.describe().round(2)
+    return data.describe(include="all").round(2)
 
 def plot_correlation_matrix(data):
-    # Compute the correlation matrix and return the heatmap
-    data_encoded = pd.get_dummies(data, drop_first=True)
-    # Calculate correlation matrix
+    # Encode the categorical columns
+    encoder = OrdinalEncoder()
+    data_encoded = encoder.fit_transform(data)
+    data_encoded = pd.DataFrame(data_encoded, columns=data.columns)
     corr = data_encoded.corr()
+
     # Create heatmap
     sns.set(style="white")
-    f, ax = plt.subplots(figsize=(18, 14))  # Increase the size of the plot
-    f.set_facecolor('none')  # Make the figure background transparent
-    ax.set_facecolor('none')  # Make the axes background transparent
-    cmap = sns.light_palette("royalblue", as_cmap=True)  # Change the color map to royal blue
+    f, ax = plt.subplots(figsize=(18, 14))  
+    f.set_facecolor('none')  # Make background transparent
+    ax.set_facecolor('none') 
     sns.heatmap(corr, cmap='coolwarm')
 
-    plt.title("Correlation Matrix", fontsize=40, fontweight='bold', pad=20)  # Make the title bold and larger
-    plt.xticks(fontsize=27, rotation=45)  # Increase x-axis label size
-    plt.yticks(fontsize=27)  # Increase y-axis label size
-    plt.tight_layout()  # Adjust the layout to prevent labels from cutting off
+    plt.title("Correlation Matrix", fontsize=40, fontweight='bold', pad=20) 
+    plt.xticks(fontsize=27, rotation=45, horizontalalignment='right') 
+    plt.yticks(fontsize=27) 
+    plt.tight_layout()
 
-    # save the plot as a png file
-    # plt.savefig('./data/outputs/correlation_matrix.png')
+    # Save the plot to a buffer (wave requires a base64 encoded image)
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
@@ -49,17 +52,16 @@ def plot_correlation_matrix(data):
 
 def plot_missing_values(data):
     plt.figure(figsize=(18,16))
-    fig = plt.gcf()  # Get the current figure
-    fig.set_facecolor('none')  # Make the figure background transparent
-
-    ax = plt.gca()  # Get the current axes
-    ax.set_facecolor('none')  # Make the axes background transparent
-
+    fig = plt.gcf() 
+    ax = plt.gca()      
+    fig.set_facecolor('none')  # Make background transparent
+    ax.set_facecolor('none')  
     sns.heatmap(data.isnull(),yticklabels=False,cbar=False,cmap='Paired')
-    plt.title("Missing Value Analysis", fontsize=40, fontweight='bold', pad=20)  # Make the title bold and larger
-    plt.xticks(fontsize=27, rotation=45)  # Increase x-axis label size
-    plt.tight_layout()  # Adjust the layout to prevent labels from cutting off
-
+    plt.title("Missing Value Analysis", fontsize=40, fontweight='bold', pad=20) 
+    plt.xticks(fontsize=27, rotation=45, horizontalalignment='right') 
+    plt.tight_layout() 
+    
+    # Save the plot to a buffer (wave requires a base64 encoded image)
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
@@ -76,32 +78,28 @@ def plot_categorical(data):
     ncols = math.ceil(math.sqrt(num_plots))
     nrows = math.ceil(num_plots / ncols)
 
-    # Create subplots
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(15, 5*nrows))
-    fig.set_facecolor('none')  # Make the figure background transparent
-    # Flatten the axes array
+    fig.set_facecolor('none')  # Make background transparent
     axs = axs.flat
-    # Set a common title for the entire figure
+    # common title for the entire figure
     fig.suptitle('Categorical Attribute Counts', fontsize=20, fontweight='bold')
 
     # Plot the count of each categorical variable
     for i, col in enumerate(categorical_cols):
         sns.countplot(data[col], ax=axs[i], color='royalblue')
-        axs[i].set_title(f"Count of {col}", fontsize=20,  pad=20)
-        axs[i].tick_params(axis='x', rotation=45, labelsize=15)
+        axs[i].set_title(f"{col}", fontsize=20,  pad=20)
+        axs[i].tick_params(axis='x', labelsize=15)
         axs[i].tick_params(axis='y', labelsize=15)
-        # x-axis label size
         axs[i].set_xlabel(col, fontsize=15)
         axs[i].set_ylabel('Count', fontsize=15)
-        # transparent background
         axs[i].set_facecolor('none')
-        
 
     # Remove unused subplots
     for ax in axs[i+1:]:
         ax.remove()
-
     plt.tight_layout()
+    
+    # Save the plot to a buffer (wave requires a base64 encoded image)
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
@@ -117,14 +115,11 @@ def plot_boxplot(data):
     ncols = math.ceil(math.sqrt(num_plots))
     nrows = math.ceil(num_plots / ncols)
 
-    # Create subplots
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(15, 5*nrows))
-    fig.set_facecolor('none')  # Make the figure background transparent
+    fig.set_facecolor('none')  # Make background transparent
 
-    # Set a common title for the entire figure
+    # common title for the entire figure
     fig.suptitle('Numerical Attribute Boxplots', fontsize=20, fontweight='bold')
-
-    # Flatten the axes array
     axs = axs.flat
 
     # Plot the boxplot of each numerical variable
@@ -137,11 +132,11 @@ def plot_boxplot(data):
         axs[i].set_ylabel('Count', fontsize=15)
         axs[i].set_facecolor('none')
 
-    # Remove unused subplots
     for ax in axs[i+1:]:
         ax.remove()
-
     plt.tight_layout()
+    
+    # Save the plot to a buffer (wave requires a base64 encoded image)
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
@@ -158,17 +153,14 @@ def display_histograms(df, target_column):
     ncols = math.ceil(math.sqrt(num_plots))
     nrows = math.ceil(num_plots / ncols)
 
-    # Create subplots
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(15, 5*nrows))
     fig.set_facecolor('none')  # Make the figure background transparent
-
-    # Set a common title for the entire figure
     fig.suptitle('Histograms', fontsize=20, fontweight='bold')
-
-    # Flatten the axes array
     axs = axs.flat
+    
     # Define the color palette for the hue classes
-    hue_colors = {0: 'royalblue', 1: 'yellow'}
+    hue_classes = df[target_column].unique()
+    hue_colors = {hue_classes[0]: 'royalblue', hue_classes[1]: 'yellow'}
 
     # Plot the histogram of each column
     for i, col in enumerate(cols):
@@ -180,11 +172,11 @@ def display_histograms(df, target_column):
         axs[i].set_ylabel('Count', fontsize=15)
         axs[i].set_facecolor('none')
 
-    # Remove unused subplots
     for ax in axs[i+1:]:
         ax.remove()
-
     plt.tight_layout()
+    
+    # Save the plot to a buffer (wave requires a base64 encoded image)
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)

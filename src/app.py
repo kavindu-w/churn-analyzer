@@ -5,7 +5,6 @@ from datetime import datetime
 from src.pages.home_page import home_page_impl
 from src.pages.analyze_page import analyze_page_impl
 
-
 logger.add(
     "./logs/debug.log",
     level='DEBUG',
@@ -23,7 +22,7 @@ logger.add(
 @app('/')
 async def serve(q: Q):
     try:
-        logger.debug(f"Request: {q.args}")
+        logger.debug(f"Initial arguments: {q.args}")
         if not q.client.initialized:
             if q.user.config is None:
                 q.user.config = {
@@ -38,10 +37,21 @@ async def serve(q: Q):
             await home_page(q, {"flag": "home"})
         elif q.args.tab == "analyze":
             await analyze_page(q, {"flag": "analyze"})
+        elif q.args.dataset_upload:
+            logger.debug(f"upload: {q.args.dataset_upload}")
+            local_path = await q.site.download(q.args.dataset_upload[0], './data/uploads/')  # Download the file
+            await analyze_page(q, {"path": local_path})
         elif q.args.button_analyze_data:
-            await analyze_page(q, {"path": "data/Bank Customer Churn Prediction.csv"})
+            logger.debug(f"TEST: {q.args.dataset}")
+            if q.args.dataset == "bank":
+                await analyze_page(q, {"path": "data/Bank Customer Churn Prediction.csv"})
+            elif q.args.dataset == "telco":
+                await analyze_page(q, {"path": "data/data_telco_customer_churn.csv"})
         else:
-            # await analyze_page(q, {"flag": "analyze"})
+            # TODO: rm only for testing
+            # await analyze_page(q, {"path": "data/data_telco_customer_churn.csv"})
+            # await analyze_page(q, {"path": "data/Bank Customer Churn Prediction.csv"})
+            
             await home_page(q, {"flag": "home"})
 
     except Exception as e:
@@ -69,7 +79,7 @@ def create_layout(q: Q, tag=None):
         secondary_items=[
             ui.tabs(
                 name="tab",
-                items=[
+                items=[ # Navigation tabs
                     ui.tab(name="home", label="Home", icon="Home"),
                     ui.tab(name="analyze", label="Analyze", icon="Financial"),
                 ],
@@ -86,8 +96,8 @@ def create_layout(q: Q, tag=None):
                 name="content_0",
                 direction="row",
                 zones=[
-                    ui.zone(name="content_01", size='30%', direction="row"), 
-                    ui.zone(
+                    ui.zone(name="content_01", size='30%', direction="row"), # select dataset
+                    ui.zone( # about
                         name="content_02",
                         size='70%',
                     ),
@@ -100,20 +110,18 @@ def create_layout(q: Q, tag=None):
                 name="content_0",
                 direction="column",
                 zones=[
-                    ui.zone(name="content_01", direction="row"), 
+                    ui.zone(name="content_01", direction="row"), # stats
                     ui.zone(
                         name="content_02",
                         direction="row",
                         zones=[
-                            ui.zone(name="content_021", size='50%', direction="row"),
-                            ui.zone(name="content_022", size='50%', direction="row"),
+                            ui.zone(name="content_021", size='50%', direction="row"), # correlation matrix
+                            ui.zone(name="content_022", size='50%', direction="row"), # missing values
                         ],
                     ),
-                    ui.zone(name="content_03", direction="row"), 
-                    ui.zone(name="content_04", direction="row"), 
-                    ui.zone(name="content_05", direction="row")
-                    
-                    
+                    ui.zone(name="content_03", direction="row"), # categorical plots
+                    ui.zone(name="content_04", direction="row"), # numerical plots
+                    ui.zone(name="content_05", direction="row") # histograms
                 ],
             ),
         ]
@@ -139,8 +147,7 @@ def create_layout(q: Q, tag=None):
 
 async def render_template(q: Q, page_cfg):
     create_layout(q, tag=page_cfg["tag"])
-    
-    
+
     if page_cfg["tag"] == "home":
         q.page["content_01"] = ui.form_card(
             box=ui.box(zone="content_01", width="100%", height="680px"),

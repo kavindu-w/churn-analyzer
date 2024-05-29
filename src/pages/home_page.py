@@ -40,7 +40,8 @@ async def home_page_impl(q:dict, details: dict) -> dict:
         ),
         ui.button(name="button_analyze_data", label="Analyze Data", primary=True),
         ui.separator("OR"),
-        ui.file_upload(name="file_upload", label="Upload a CSV file", multiple=False),
+        ui.text_s("<center>Supported file formats: csv</center>"),
+        ui.file_upload(name="dataset_upload", label="Upload a CSV file", multiple=False, file_extensions=["csv"]),
         
     ]
     
